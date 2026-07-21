@@ -2,14 +2,6 @@
 
 > [Home](../README.md)
 
-## Overview
-
-The Community Event Hub supports different types of events. An event defines **what is being organized**, while each phase defines **how participants play** through a dedicated ruleset.
-
-An event consists of one or more phases, allowing competitions to evolve over time with different song pools and gameplay rules.
-
----
-
 ## Event Types
 
 There are three primary event types.
@@ -18,14 +10,17 @@ There are three primary event types.
 
 A tournament played at a physical venue.
 
-IRL tournaments use the dedicated Tournament module, which manages:
+The tournament structure is managed by a dedicated Tournament application, which may handle:
 
-- Divisions
-- Brackets
-- Rounds
-- Matches
+* divisions
+* brackets
+* rounds
+* matches
+* qualifications
+* song selection
+* tournament progression
 
-Although the tournament takes place locally, matches may still be played using online lobbies.
+Community Event Hub stores the tournament as an event and preserves its shared data, participants, final results, and references to the external Tournament application.
 
 ---
 
@@ -33,7 +28,9 @@ Although the tournament takes place locally, matches may still be played using o
 
 A tournament played remotely.
 
-Online tournaments use the same Tournament module as IRL tournaments, but every match is played remotely through online lobbies.
+Online tournaments may use the same dedicated Tournament application as IRL tournaments, but their matches are played remotely through online lobbies.
+
+Community Event Hub stores the tournament as an event and preserves its shared data, participants, match results, final standings, and references to the external Tournament application.
 
 ---
 
@@ -41,125 +38,159 @@ Online tournaments use the same Tournament module as IRL tournaments, but every 
 
 A generic online community event.
 
-Unlike tournaments, Online Events are much more flexible and are composed of one or more phases with dedicated rulesets.
-
-An online event exposes a descriptive format.
+Online events are flexible and may represent many different kinds of activities.
 
 Examples include:
 
-- Pack Release Events
-- Community Events
-- Tournament Preparation Events
-- Seasonal Events
+* Pack Release Events
+* Community Events
+* Tournament Preparation Events
+* Seasonal Events, such as ITL and Stamina RPG
 
-Behaviour of an event is entirely defined by the phase ruleset.
+Each online event is managed by an external application dedicated to its specific format or ruleset.
+
+The external application determines how the event works, including any phases, song pools, score submissions, restrictions, or leaderboard calculations.
+
+Community Event Hub stores the shared event information and preserves the results produced by that application.
+
 ---
 
 ## Event Structure
 
-Every event contains:
+Every event stored in Community Event Hub contains shared information such as:
 
-- Name
-- Type
-- Format (optional, descriptive)
-- Start date
-- End date
-- One or more phases
+* name
+* type
+* format and descriptive information
+* start date
+* end date
+* participants
+* song pools, when required to preserve historical chart data
+* external application reference
+* final or published results
+* event status
 
-Each phase contains:
+The exact internal structure of an event is not defined by Community Event Hub.
 
-- Start date
-- End date
-- Song Pool
-- Ruleset
+For example, an external application may organize an event as:
 
-This allows events to evolve over time.
+* multiple monthly phases with a sequence of changing song pools
+* a tournament with brackets and matches
+* a fixed-time event in which players have 48 hours to play a specific set of charts
 
-Examples:
-
-- a Pack Release event may contain a single 48-hour phase;
-- a Seasonal Event may contain one phase every month;
-- a Tournament Preparation event may switch gameplay rules between phases.
-
----
-
-## Song Pools
-
-Each phase owns exactly one Song Pool.
-
-Different phases may use different song pools.
-
-Examples:
-
-- qualification songs
-- finals songs
-- monthly pools
-- pack release songs
+These details belong to the external application and do not need to be represented as common entities inside the hub.
 
 ---
 
-## Rulesets
+## Event Formats and Rulesets
 
-A Ruleset defines how a phase works.
+Events may produce two main types of results:
 
-Rulesets are implemented as application modules and determine:
+* leaderboard results, mainly used by events such as ITL and Stamina RPG
+* direct match results, mainly used by tournaments and online lobby matches
 
-- gameplay behaviour
-- backend validation
-- score submission rules
-- leaderboard generation
-- interaction with the game
+The external application is responsible for applying the event rules and publishing results in the format expected by Community Event Hub.
 
-Each phase uses exactly one Ruleset.
+### Seasonal Events
 
-### Global Leaderboard
+Players compete asynchronously on a set of charts.
 
-Players compete asynchronously on the entire Song Pool.
+The external application manages score submissions and calculates the final leaderboard.
 
-Results are generated from score submissions.
+Events such as ITL and Stamina RPG may use different leaderboard calculation algorithms.
 
-The leaderboard calculation itself may use different algorithms depending on the event (for example ITL or Stamina RPG).
+Community Event Hub stores the published event leaderboard and the related historical data.
 
 ---
 
 ### Lobby Match
 
-Players challenge each other through online lobbies.
+Players are given a specific time window in which they can challenge each other through online lobbies.
 
-Gameplay is based on direct matches between participants.
+This format may encourage greater use of online lobbies, which are currently underused.
 
-Song selection is defined by the lobby match system.
+The external application manages:
 
----
+* lobby creation
+* participants
+* match scheduling
+* song selection
+* direct matches
+* match results
 
-### Sightread
+The application may support multiple song-selection methods.
 
-Players may only submit their first attempt.
+Examples include:
 
-Restart is disabled inside the game.
+* **Random selection**, where songs are automatically selected from an eligible pool
+* **Player picks**, where each player chooses one or more songs
+* **Draft selection**, where a predefined set of songs is generated and players remove or ban songs before the match
+
+Draft rules may define:
+
+* the number of songs initially selected
+* the number of bans available to each player
+* the order in which players ban songs
+* the criteria used to determine the first player
+* the number of songs that remain available for the match
+
+The selected songs may be sent directly to the game lobby by the external application.
+
+Song-selection data is operational and may remain temporary. However, Community Event Hub could preserve the charts that were actually played, picked, or banned.
+
+Community Event Hub stores the results of each match.
 
 ---
 
 ### Fixed Time Set
 
-Players must complete the Song Pool within a fixed amount of time.
+Players must complete a set of charts within a fixed time window.
 
-The ruleset may also define a maximum allowed rest time between songs.
+The external application may also define:
+
+* a maximum rest time between songs
+* the order of the charts
+* allowed retries
+* score submission deadlines
+
+Sightread events may disable the restart functionality and only accept the player's first attempt.
+
+This format is particularly suitable for pack release events. Chart artists can create an event in which they release a limited number of charts to be played within a fixed time window, allowing players to challenge each other on those charts.
+
+Community Event Hub stores the published event leaderboard and the related historical data.
 
 ---
 
 ### Tournament
 
-Uses the dedicated Tournament module.
+The dedicated Tournament application manages tournament-specific concepts such as:
 
-This ruleset enables tournament-specific gameplay, such as bracket progression and tournament matches.
+* divisions
+* brackets
+* rounds
+* matches
+* qualifications
+* tournament progression
+
+Community Event Hub stores the results of each match, the final standings, and any other relevant historical data published by the Tournament application.
 
 ---
 
-## Notes
+## Historical Data
 
-Not every event is based on direct matches.
+Community Event Hub maintains the historical archive for community events.
 
-Some rulesets produce matches between players.
+Every external application publishes event data using a defined integration format.
 
-Others collect score submissions and generate leaderboards directly.
+Once the relevant information is published or finalized, the hub preserves data such as:
+
+* event metadata
+* participants
+* played songs or charts
+* final standings
+* match results, when relevant
+* leaderboard results, when relevant
+* ranking updates
+* references to the originating external application
+
+The hub does not need to preserve every temporary state used internally by an external application.
