@@ -29,4 +29,4 @@ The platform should support multiple event formats:
 ## Documentation
 
 * [Event formats](./docs/event-formats.md)
-* [Domain model](./docs/domain-model.md)
+* [Project ideas](./docs/project-ideas.md)
